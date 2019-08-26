@@ -1,90 +1,161 @@
-# Welcome to GitHub
+# AWS EC2 Instance Terraform module
 
-Welcome to GitHub—where millions of developers work together on software. Ready to get started? Let’s learn how this all works by building and publishing your first GitHub Pages website!
+Terraform module which creates EC2 instance(s) on AWS.
 
-## Repositories
+These types of resources are supported:
 
-Right now, we’re in your first GitHub **repository**. A repository is like a folder or storage space for your project. Your project's repository contains all its files such as code, documentation, images, and more. It also tracks every change that you—or your collaborators—make to each file, so you can always go back to previous versions of your project if you make any mistakes.
+* [EC2 instance](https://www.terraform.io/docs/providers/aws/r/instance.html)
 
-This repository contains three important files: The HTML code for your first website on GitHub, the CSS stylesheet that decorates your website with colors and fonts, and the **README** file. It also contains an image folder, with one image file.
+## Terraform versions
 
-## Describe your project
+Terraform 0.12. Pin module version to `~> v2.0`. Submit pull-requests to `master` branch.
 
-You are currently viewing your project's **README** file. **_README_** files are like cover pages or elevator pitches for your project. They are written in plain text or [Markdown language](https://guides.github.com/features/mastering-markdown/), and usually include a paragraph describing the project, directions on how to use it, who authored it, and more.
+Terraform 0.11. Pin module version to `~> v1.0`. Submit pull-requests to `terraform011` branch.
 
-[Learn more about READMEs](https://help.github.com/en/articles/about-readmes)
+## Usage
 
-## Your first website
+```hcl
+module "ec2_cluster" {
+  source                 = "terraform-aws-modules/ec2-instance/aws"
+  version                = "~> 2.0"
 
-**GitHub Pages** is a free and easy way to create a website using the code that lives in your GitHub repositories. You can use GitHub Pages to build a portfolio of your work, create a personal website, or share a fun project that you coded with the world. GitHub Pages is automatically enabled in this repository, but when you create new repositories in the future, the steps to launch a GitHub Pages website will be slightly different.
+  name                   = "my-cluster"
+  instance_count         = 5
 
-[Learn more about GitHub Pages](https://pages.github.com/)
+  ami                    = "ami-ebd02392"
+  instance_type          = "t2.micro"
+  key_name               = "user1"
+  monitoring             = true
+  vpc_security_group_ids = ["sg-12345678"]
+  subnet_id              = "subnet-eddcdzz4"
 
-## Rename this repository to publish your site
-
-We've already set-up a GitHub Pages website for you, based on your personal username. This repository is called `hello-world`, but you'll rename it to: `username.github.io`, to match your website's URL address. If the first part of the repository doesn’t exactly match your username, it won’t work, so make sure to get it right.
-
-Let's get started! To update this repository’s name, click the `Settings` tab on this page. This will take you to your repository’s settings page. 
-
-![repo-settings-image](https://user-images.githubusercontent.com/18093541/63130482-99e6ad80-bf88-11e9-99a1-d3cf1660b47e.png)
-
-Under the **Repository Name** heading, type: `username.github.io`, where username is your username on GitHub. Then click **Rename**—and that’s it. When you’re done, click your repository name or browser’s back button to return to this page.
-
-<img width="1039" alt="rename_screenshot" src="https://user-images.githubusercontent.com/18093541/63129466-956cc580-bf85-11e9-92d8-b028dd483fa5.png">
-
-Once you click **Rename**, your website will automatically be published at: https://your-username.github.io/. The HTML file—called `index.html`—is rendered as the home page and you'll be making changes to this file in the next step.
-
-Congratulations! You just launched your first GitHub Pages website. It's now live to share with the entire world
-
-## Making your first edit
-
-When you make any change to any file in your project, you’re making a **commit**. If you fix a typo, update a filename, or edit your code, you can add it to GitHub as a commit. Your commits represent your project’s entire history—and they’re all saved in your project’s repository.
-
-With each commit, you have the opportunity to write a **commit message**, a short, meaningful comment describing the change you’re making to a file. So you always know exactly what changed, no matter when you return to a commit.
-
-## Practice: Customize your first GitHub website by writing HTML code
-
-Want to edit the site you just published? Let’s practice commits by introducing yourself in your `index.html` file. Don’t worry about getting it right the first time—you can always build on your introduction later.
-
-Let’s start with this template:
-
-```
-<p>Hello World! I’m [username]. This is my website!</p>
+  tags = {
+    Terraform   = "true"
+    Environment = "dev"
+  }
+}
 ```
 
-To add your introduction, copy our template and click the edit pencil icon at the top right hand corner of the `index.html` file.
+## Examples
 
-<img width="997" alt="edit-this-file" src="https://user-images.githubusercontent.com/18093541/63131820-0794d880-bf8d-11e9-8b3d-c096355e9389.png">
+* [Basic EC2 instance](https://github.com/terraform-aws-modules/terraform-aws-ec2-instance/tree/master/examples/basic)
+* [EC2 instance with EBS volume attachment](https://github.com/terraform-aws-modules/terraform-aws-ec2-instance/tree/master/examples/volume-attachment)
+
+## Make an encrypted AMI for use
+
+This module does not support encrypted AMI's out of the box however it is easy enough for you to generate one for use
+
+This example creates an encrypted image from the latest ubuntu 16.04 base image.
 
 
-Delete this placeholder line:
+```hcl
+resource "aws_ami_copy" "ubuntu-xenial-encrypted-ami" {
+  name              = "ubuntu-xenial-encrypted-ami"
+  description       = "An encrypted root ami based off ${data.aws_ami.ubuntu-xenial.id}"
+  source_ami_id     = "${data.aws_ami.ubuntu-xenial.id}"
+  source_ami_region = "eu-west-2"
+  encrypted         = "true"
 
+  tags {
+    Name = "ubuntu-xenial-encrypted-ami"
+  }
+}
+
+data "aws_ami" "encrypted-ami" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu-xenial-encrypted"]
+  }
+
+  owners = ["self"]
+}
+
+data "aws_ami" "ubuntu-xenial" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+  }
+
+  owners      = ["099720109477"]
+}
 ```
-<p>Welcome to your first GitHub Pages website!</p>
-```
-
-Then, paste the template to line 15 and fill in the blanks.
-
-<img width="1032" alt="edit-githuboctocat-index" src="https://user-images.githubusercontent.com/18093541/63132339-c3a2d300-bf8e-11e9-8222-59c2702f6c42.png">
 
 
-When you’re done, scroll down to the `Commit changes` section near the bottom of the edit page. Add a short message explaining your change, like "Add my introduction", then click `Commit changes`.
+## Notes
 
+* `network_interface` can't be specified together with `associate_public_ip_address`, which makes `network_interface`
+  not configurable using this module at the moment
+* Changes in `ebs_block_device` argument will be ignored. Use [aws_volume_attachment](https://www.terraform.io/docs/providers/aws/r/volume_attachment.html) resource to attach and detach volumes from AWS EC2 instances. See [this example](https://github.com/terraform-aws-modules/terraform-aws-ec2-instance/tree/master/examples/volume-attachment).
+* One of `subnet_id` or `subnet_ids` is required. If both are provided, the value of `subnet_id` is prepended to the value of `subnet_ids`.
 
-<img width="1030" alt="add-my-username" src="https://user-images.githubusercontent.com/18093541/63131801-efbd5480-bf8c-11e9-9806-89273f027d16.png">
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+## Inputs
 
-Once you click `Commit changes`, your changes will automatically be published on your GitHub Pages website. Refresh the page to see your new changes live in action.
+| Name | Description | Type | Default | Required |
+|------|-------------|:----:|:-----:|:-----:|
+| ami | ID of AMI to use for the instance | string | n/a | yes |
+| associate\_public\_ip\_address | If true, the EC2 instance will have associated public IP address | bool | `"false"` | no |
+| cpu\_credits | The credit option for CPU usage (unlimited or standard) | string | `"standard"` | no |
+| disable\_api\_termination | If true, enables EC2 Instance Termination Protection | bool | `"false"` | no |
+| ebs\_block\_device | Additional EBS block devices to attach to the instance | list(map(string)) | `[]` | no |
+| ebs\_optimized | If true, the launched EC2 instance will be EBS-optimized | bool | `"false"` | no |
+| ephemeral\_block\_device | Customize Ephemeral (also known as Instance Store) volumes on the instance | list(map(string)) | `[]` | no |
+| get\_password\_data | If true, wait for password data to become available and retrieve it. | bool | `"false"` | no |
+| iam\_instance\_profile | The IAM Instance Profile to launch the instance with. Specified as the name of the Instance Profile. | string | `""` | no |
+| instance\_count | Number of instances to launch | number | `"1"` | no |
+| instance\_initiated\_shutdown\_behavior | Shutdown behavior for the instance | string | `""` | no |
+| instance\_type | The type of instance to start | string | n/a | yes |
+| ipv6\_address\_count | A number of IPv6 addresses to associate with the primary network interface. Amazon EC2 chooses the IPv6 addresses from the range of your subnet. | number | `"0"` | no |
+| ipv6\_addresses | Specify one or more IPv6 addresses from the range of the subnet to associate with the primary network interface | list(string) | `[]` | no |
+| key\_name | The key name to use for the instance | string | `""` | no |
+| monitoring | If true, the launched EC2 instance will have detailed monitoring enabled | bool | `"false"` | no |
+| name | Name to be used on all resources as prefix | string | n/a | yes |
+| network\_interface | Customize network interfaces to be attached at instance boot time | list(map(string)) | `[]` | no |
+| placement\_group | The Placement Group to start the instance in | string | `""` | no |
+| private\_ip | Private IP address to associate with the instance in a VPC | string | `""` | no |
+| private\_ips | A list of private IP address to associate with the instance in a VPC. Should match the number of instances. | list(string) | `[]` | no |
+| root\_block\_device | Customize details about the root block device of the instance. See Block Devices below for details | list(map(string)) | `[]` | no |
+| source\_dest\_check | Controls if traffic is routed to the instance when the destination address does not match the instance. Used for NAT or VPNs. | bool | `"true"` | no |
+| subnet\_id | The VPC Subnet ID to launch in | string | `""` | no |
+| subnet\_ids | A list of VPC Subnet IDs to launch in | list(string) | `[]` | no |
+| tags | A mapping of tags to assign to the resource | map(string) | `{}` | no |
+| tenancy | The tenancy of the instance (if the instance is running in a VPC). Available values: default, dedicated, host. | string | `"default"` | no |
+| use\_num\_suffix | Always append numerical suffix to instance name, even if instance_count is 1 | bool | `"false"` | no |
+| user\_data | The user data to provide when launching the instance | string | `""` | no |
+| volume\_tags | A mapping of tags to assign to the devices created by the instance at launch time | map(string) | `{}` | no |
+| vpc\_security\_group\_ids | A list of security group IDs to associate with | list(string) | n/a | yes |
 
-:tada: You just made your first commit! :tada:
+## Outputs
 
-## Extra Credit: Keep on building!
+| Name | Description |
+|------|-------------|
+| availability\_zone | List of availability zones of instances |
+| credit\_specification | List of credit specification of instances |
+| id | List of IDs of instances |
+| key\_name | List of key names of instances |
+| password\_data | List of Base-64 encoded encrypted password data for the instance |
+| placement\_group | List of placement groups of instances |
+| primary\_network\_interface\_id | List of IDs of the primary network interface of instances |
+| private\_dns | List of private DNS names assigned to the instances. Can only be used inside the Amazon EC2, and only available if you've enabled DNS hostnames for your VPC |
+| private\_ip | List of private IP addresses assigned to the instances |
+| public\_dns | List of public DNS names assigned to the instances. For EC2-VPC, this is only available if you've enabled DNS hostnames for your VPC |
+| public\_ip | List of public IP addresses assigned to the instances, if applicable |
+| security\_groups | List of associated security groups of instances |
+| subnet\_id | List of IDs of VPC subnets of instances |
+| tags | List of tags of instances |
+| volume\_tags | List of tags of volumes of instances |
+| vpc\_security\_group\_ids | List of associated security groups of instances, if running in non-default VPC |
 
-Change the placeholder Octocat gif on your GitHub Pages website by [creating your own personal Octocat emoji](https://myoctocat.com/build-your-octocat/) or [choose a different Octocat gif from our logo library here](https://octodex.github.com/). Add that image to line 12 of your `index.html` file, in place of the `<img src=` link.
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
-Want to add even more code and fun styles to your GitHub Pages website? [Follow these instructions](https://github.com/github/personal-website) to build a fully-fledged static website.
+## Authors
 
-![octocat](./images/create-octocat.png)
+Module managed by [Anton Babenko](https://github.com/antonbabenko).
 
-## Everything you need to know about GitHub
+## License
 
-Getting started is the hardest part. If there’s anything you’d like to know as you get started with GitHub, try searching [GitHub Help](https://help.github.com). Our documentation has tutorials on everything from changing your repository settings to configuring GitHub from your command line.
+Apache 2 Licensed. See LICENSE for full details.
