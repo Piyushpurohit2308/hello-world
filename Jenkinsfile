@@ -1,43 +1,38 @@
-#!groovy
+pipeline {
+    agent {
+        node {
+            label 'master'
+        }
+    }
 
-// Build Parameters
-properties([ parameters([
-  string( name: 'AWS_ACCESS_KEY_ID', defaultValue: ''),
-  string( name: 'AWS_SECRET_ACCESS_KEY', defaultValue: '')
-]), pipelineTriggers([]) ])
+    stages {
 
-// Environment Variables
-env.AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID
-env.AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY
+        stage('terraform started') {
+            steps {
+                sh 'echo "Started...!" '
+            }
+        }
+        stage('git clone') {
+            steps {
+                sh 'sudo rm -r *;sudo git clone https://github.com/Piyushpurohit2308/jenkins.git'
+            }
+        }
+        stage('terraform init') {
+            steps {
+                sh 'sudo /home/ec2-user/terraform init ./jenkins'
+            }
+        }
+        stage('terraform plan') {
+            steps {
+                sh 'ls ./jenkins; sudo /home/ec2-user/terraform plan ./jenkins'
+            }
+        }
+        stage('terraform ended') {
+            steps {
+                sh 'echo "Ended....!!"'
+            }
+        }
 
-node {
-  env.PATH += ":/opt/terraform_0.7.13/"
-
-  stage ('Checkout') {
-    checkout scm
-  }
-
-  stage ('Terraform Plan') {
-    sh 'terraform plan -no-color -out=create.tfplan'
-  }
-
-  // Optional wait for approval
-  input 'Deploy stack?'
-
-  stage ('Terraform Apply') {
-    sh 'terraform apply -no-color create.tfplan'
-  }
-
-  stage ('Post Run Tests') {
-    echo "Insert your infrastructure test of choice and/or application validation here."
-    sleep 2
-    sh 'terraform show'
-  }
-
-  stage ('Notification') {
-    mail from: "jenkins@mycompany.com",
-         to: "devopsteam@mycompany.com",
-         subject: "Terraform build complete",
-         body: "Jenkins job ${env.JOB_NAME} - build ${env.BUILD_NUMBER} complete"
-  }
+        
+    }
 }
